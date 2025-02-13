@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Cordell Twitch!</title>
+        <link rel="icon" type="image/png" href="logo.png">
+        <link rel="stylesheet" href="styles.css">
+        <script type="text/javascript" src="app.js"></script>
+    </head>
+    <body>
+        <div id="auth-screen">
+            <div id="auth-box">
+                <h2>Access key</h2>
+                <input type="text" id="access-key" placeholder="Enter pass-key, поросёнок">
+                <button onclick="validateKey()">Enter</button>
+            </div>
+        </div>    
+
+        <div id="header">
+            <div id="logo-container">
+                <img id="logo" src="logo.png" alt="Логотип">
+                <span id="site-title">Cordell Twitch!</span>
+            </div>
+        </div>
+
+        <div id="container">
+            <div id="video-section">
+                <video id="player" controls>
+                    <source id="video-source" src="" type="video/mp4">
+                    Unsupported video format, поросёнок!
+                </video>
+
+                <div class="video-info">
+                    <p id="video-title">Untitled</p>
+                    <p id="video-date">Date: ???</p>
+                    <img src="edit.png" id="edit-icon">
+                    <img src="download.png" id="download-icon">
+                </div>
+
+                <form id="upload-form">
+                    <label id="file-label" for="file-input">
+                        <img id="file-icon" src="upload.png">
+                    </label>
+                    <input type="file" id="file-input" accept="video/mp4" hidden>
+                    <input type="text" id="file-title" placeholder="Video title">
+                    <button id="upload-button" type="submit">Upload</button>
+                    <p id="upload-status"></p>
+                </form>
+            </div>
+
+            <div id="video-container">
+                <div id="search-container">
+                    <input type="text" id="video-search" placeholder="Search video...">
+                    <button id="reload-button" onclick="loadVideos()">Reload</button>
+                </div>
+                <div id="video-list"></div>
+            </div>        
+        </div>
+    </body>
+</html>
