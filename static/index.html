@@ -3,9 +3,9 @@
     <head>
         <meta charset="UTF-8">
         <title>Cordell Twitch!</title>
-        <link rel="icon" type="image/png" href="logo.png">
-        <link rel="stylesheet" href="styles.css">
-        <script type="text/javascript" src="app.js"></script>
+        <link rel="icon" type="image/png" href="static/logo.png">
+        <link rel="stylesheet" href="static/styles.css">
+        <script type="text/javascript" src="static/app.js"></script>
     </head>
     <body>
         <div id="auth-screen">
@@ -18,7 +18,7 @@
 
         <div id="header">
             <div id="logo-container">
-                <img id="logo" src="logo.png" alt="Логотип">
+                <img id="logo" src="static/logo.png" alt="Логотип">
                 <span id="site-title">Cordell Twitch!</span>
             </div>
         </div>
@@ -33,13 +33,15 @@
                 <div class="video-info">
                     <p id="video-title">Untitled</p>
                     <p id="video-date">Date: ???</p>
-                    <img src="edit.png" id="edit-icon">
-                    <img src="download.png" id="download-icon">
+                    <img src="static/edit.png" id="edit-icon" onclick="editTitle()">
+                    <a id="download-link" href="#" download>
+                        <img src="static/download.png" id="download-icon">
+                    </a>
                 </div>
 
                 <form id="upload-form">
                     <label id="file-label" for="file-input">
-                        <img id="file-icon" src="upload.png">
+                        <img id="file-icon" src="static/upload.png">
                     </label>
                     <input type="file" id="file-input" accept="video/mp4" hidden>
                     <input type="text" id="file-title" placeholder="Video title">
@@ -54,6 +56,7 @@
                     <button id="reload-button" onclick="loadVideos()">Reload</button>
                 </div>
                 <div id="video-list"></div>
+                <div id="pagination"></div>
             </div>        
         </div>
     </body>
