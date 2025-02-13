@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import datetime
 import subprocess
 
 from flask import (
@@ -37,12 +38,26 @@ def _list_videos():
     offset = int(request.args.get("offset", 0))
     limit = int(request.args.get("limit", 10))
     query = request.args.get("query", "").lower()
+
+    videos = [
+        f for f in os.listdir(VIDEO_DIR)
+        if f.endswith('.mp4')
+    ]
     
-    videos = [f for f in os.listdir(VIDEO_DIR) if f.endswith('.mp4')]
     if query:
         videos = [video for video in videos if query in video.lower()]
 
-    return jsonify(videos[offset:offset + limit])
+    video_data = []
+    for video in videos[offset:offset + limit]:
+        video_path = os.path.join(VIDEO_DIR, video)
+        creation_date = os.path.getctime(video_path)
+        creation_date = datetime.datetime.fromtimestamp(creation_date).isoformat()
+        video_data.append({
+            'name': video,
+            'creation_date': creation_date
+        })
+
+    return jsonify(video_data)
 
 
 @app.route('/videos/count', methods=['GET'])

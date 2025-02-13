@@ -74,18 +74,18 @@ async function loadVideos() {
 
     const offset = currentPage * limit;
     let response = await fetch(`/videos?offset=${offset}&limit=${limit}&query=${currentFilter}`);
-    let videoNames = await response.json();
+    let videoData = await response.json();
 
     allVideos = [];
-    for (let fileName of videoNames) {
-        let url = `/video/${fileName}`;
-        let displayName = fileName;
-        let lastModified = await getVideoDate(url);
+    for (let video of videoData) {
+        let url = `/video/${video.name}`;
+        let displayName = video.name;
+        let lastModified = video.creation_date;
         
         allVideos.push({ url, displayName, lastModified });
     }
 
-    allVideos.sort((a, b) => b.lastModified - a.lastModified);
+    allVideos.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
 
     loadedVideos = 0;
     renderNextBatch();
