@@ -1,0 +1,128 @@
+#player {
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    aspect-ratio: 16 / 9;
+}
+
+#video-section {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+video {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.video-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 640px;
+    margin-top: 10px;
+    padding: 0 10px;
+    flex-wrap: wrap;
+}
+
+.video-info p {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.video-info img {
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+#video-list {
+    scrollbar-width: thin;
+    scrollbar-color: #555 #222;
+    overflow-y: auto;
+    flex: 1;
+    overflow-y: auto;
+    min-width: 400px;
+    max-width: 400px;
+    max-height: 600px;
+}
+
+#video-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#video-list::-webkit-scrollbar-track {
+    background: #222;
+    border-radius: 4px;
+}
+
+#video-list::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+#video-list::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+.video-item {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px;
+    background: #222;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    transition: 0.3s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.video-item span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+}
+
+.video-item:hover {
+    background: #333;
+}
+
+.video-item canvas {
+    width: 80px;
+    height: 45px;
+    margin-right: 10px;
+    border-radius: 5px;
+}
+
+.video-item.selected {
+    background-color: #414344;
+}
+
+#video-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    align-items: center;
+    max-width: 400px;
+    min-width: 400px;
+    gap: 10px;
+}
+
+#video-search {
+    width: 100%;
+    max-width: 400px;
+    padding: 6px;
+    margin-bottom: 10px;
+    background: #222;
+    color: white;
+    border: 1px solid #444;
+    border-radius: 5px;
+    flex-grow: 1;
+}

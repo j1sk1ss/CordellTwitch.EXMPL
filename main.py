@@ -14,8 +14,8 @@ from flask import (
 )
 
 
-app = Flask(__name__, template_folder='static', static_folder='static')
-VIDEO_DIR = '/Users/nikolaj/Downloads'
+app = Flask(__name__, template_folder="static", static_folder="static")
+VIDEO_DIR = "/Users/nikolaj/Downloads"
 
 
 def _load_keys():
@@ -28,12 +28,12 @@ def _load_keys():
 ACCESS_KEYS = _load_keys()
 
 
-@app.route('/')
+@app.route("/")
 def _index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
-@app.route('/videos', methods=['GET'])
+@app.route("/videos", methods=["GET"])
 def _list_videos():
     offset = int(request.args.get("offset", 0))
     limit = int(request.args.get("limit", 10))
@@ -41,7 +41,7 @@ def _list_videos():
 
     videos = [
         f for f in os.listdir(VIDEO_DIR)
-        if f.endswith('.mp4')
+        if f.endswith(".mp4")
     ]
     
     if query:
@@ -53,20 +53,24 @@ def _list_videos():
         creation_date = os.path.getctime(video_path)
         creation_date = datetime.datetime.fromtimestamp(creation_date).isoformat()
         video_data.append({
-            'name': video,
-            'creation_date': creation_date
+            "name": video,
+            "creation_date": creation_date
         })
 
     return jsonify(video_data)
 
 
-@app.route('/videos/count', methods=['GET'])
+@app.route("/videos/count", methods=["GET"])
 def _videos_count():
-    videos = [f for f in os.listdir(VIDEO_DIR) if f.endswith('.mp4')]
+    query = request.args.get("query", "").lower()
+    videos = [f for f in os.listdir(VIDEO_DIR) if f.endswith(".mp4")]
+    if query:
+        videos = [video for video in videos if query in video.lower()]
+        
     return jsonify({"count": len(videos)})
 
 
-@app.route('/video:download/<filename>', methods=['GET'])
+@app.route("/video:download/<filename>", methods=["GET"])
 def download_video(filename):
     try:
         video_path = os.path.join(VIDEO_DIR, filename)
@@ -78,17 +82,17 @@ def download_video(filename):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/video/<filename>', methods=['GET'])
+@app.route("/video/<filename>", methods=["GET"])
 def _stream_video(filename):
     file_path = os.path.join(VIDEO_DIR, filename)
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
     
     file_size = os.path.getsize(file_path)
-    range_header = request.headers.get('Range', None)
+    range_header = request.headers.get("Range", None)
 
     def generate(start, length):
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             f.seek(start)
             while length > 0:
                 chunk = f.read(min(4096, length))
@@ -98,43 +102,63 @@ def _stream_video(filename):
                 length -= len(chunk)
 
     if range_header:
-        range_match = re.search(r'bytes=(\d+)-(\d*)', range_header)
+        range_match = re.search(r"bytes=(\d+)-(\d*)", range_header)
         if range_match:
             start = int(range_match.group(1))
             end = int(range_match.group(2)) if range_match.group(2) else file_size - 1
             length = end - start + 1
 
-            response = Response(generate(start, length), status=206, mimetype='video/mp4')
-            response.headers.add('Content-Range', f'bytes {start}-{end}/{file_size}')
-            response.headers.add('Accept-Ranges', 'bytes')
-            response.headers.add('Content-Length', str(length))
+            response = Response(generate(start, length), status=206, mimetype="video/mp4")
+            response.headers.add("Content-Range", f"bytes {start}-{end}/{file_size}")
+            response.headers.add("Accept-Ranges", "bytes")
+            response.headers.add("Content-Length", str(length))
             return response
 
-    response = Response(generate(0, file_size), mimetype='video/mp4')
-    response.headers.add('Content-Length', str(file_size))
-    response.headers.add('Accept-Ranges', 'bytes')
+    response = Response(generate(0, file_size), mimetype="video/mp4")
+    response.headers.add("Content-Length", str(file_size))
+    response.headers.add("Accept-Ranges", "bytes")
     return response
 
 
-@app.route('/upload', methods=['POST'])
+@app.route("/upload", methods=["POST"])
 def _upload_video():
-    if 'file' not in request.files:
+    if "file" not in request.files:
         return jsonify({"error": "No file part"}), 400
     
-    file = request.files['file']
-    if file.filename == '':
+    file = request.files["file"]
+    if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
     
-    file_path = os.path.join(VIDEO_DIR, request.form['title'])
+    file_path = os.path.join(VIDEO_DIR, request.form["title"])
     file.save(file_path)
-    return jsonify({"success": True, "filename": os.path.join(VIDEO_DIR, request.form['title'])})
+    return jsonify({"success": True, "filename": os.path.join(VIDEO_DIR, request.form["title"])})
 
 
-@app.route('/rename-video', methods=['POST'])
+@app.route('/delete-video', methods=['POST'])
+def delete_video():
+    data: dict = request.json
+    video_name = data.get('video_name')
+
+    if not video_name:
+        return jsonify({'success': False, 'error': 'Video name is required'}), 400
+
+    video_path = os.path.join(VIDEO_DIR, video_name)
+
+    if os.path.exists(video_path):
+        try:
+            os.remove(video_path)
+            return jsonify({'success': True})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+    else:
+        return jsonify({'success': False, 'error': 'Video not found'}), 404
+
+
+@app.route("/rename-video", methods=["POST"])
 def _rename_video():
     data: dict = request.json
-    old_name = data.get('old_name')
-    new_name = data.get('new_name')
+    old_name = data.get("old_name")
+    new_name = data.get("new_name")
     old_path = os.path.join(VIDEO_DIR, old_name)
     new_path = os.path.join(VIDEO_DIR, new_name)
     
@@ -156,19 +180,19 @@ def _check_key():
     return jsonify({"access": "denied"}), 403
 
 
-@app.route('/stream', methods=['POST'])
+@app.route("/stream", methods=["POST"])
 def _start_stream():
-    stream_key = request.args.get('key')
-    output_path = os.path.join(VIDEO_DIR, f'{stream_key}.mp4')
+    stream_key = request.args.get("key")
+    output_path = os.path.join(VIDEO_DIR, f"{stream_key}.mp4")
     command = [
-        'ffmpeg', '-i', f'rtmp://localhost/live/{stream_key}',
-        '-c:v', 'copy', '-c:a', 'copy', output_path
+        "ffmpeg", "-i", f"rtmp://localhost/live/{stream_key}",
+        "-c:v", "copy", "-c:a", "copy", output_path
     ]
     
     subprocess.Popen(command)
     return jsonify({"success": True, "message": "Stream recording started."})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     os.makedirs(VIDEO_DIR, exist_ok=True)
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

@@ -3,8 +3,10 @@
     <head>
         <meta charset="UTF-8">
         <title>Cordell Twitch!</title>
-        <link rel="icon" type="image/png" href="static/logo.png">
-        <link rel="stylesheet" href="static/styles.css">
+        <link rel="icon" type="image/png" href="static/icons/logo.png">
+        <link rel="stylesheet" href="static/styles/common.css">
+        <link rel="stylesheet" href="static/styles/video.css">
+        <link rel="stylesheet" href="static/styles/auth.css">
         <script type="text/javascript" src="static/app.js"></script>
     </head>
     <body>
@@ -18,7 +20,7 @@
 
         <div id="header">
             <div id="logo-container">
-                <img id="logo" src="static/logo.png" alt="Логотип">
+                <img id="logo" type="image/png" src="static/icons/logo.png" alt="Логотип">
                 <span id="site-title">Cordell Twitch!</span>
             </div>
         </div>
@@ -33,15 +35,16 @@
                 <div class="video-info">
                     <p id="video-title">Untitled</p>
                     <p id="video-date">Date: ???</p>
-                    <img src="static/edit.png" id="edit-icon" onclick="editTitle()">
+                    <img src="static/icons/edit.png" id="edit-icon" onclick="editTitle()">
+                    <img src="static/icons/delete.png" id="edit-icon" onclick="deleteVideo()">
                     <a id="download-link" href="#" download>
-                        <img src="static/download.png" id="download-icon">
+                        <img src="static/icons/download.png" id="download-icon">
                     </a>
                 </div>
 
                 <form id="upload-form">
                     <label id="file-label" for="file-input">
-                        <img id="file-icon" src="static/upload.png">
+                        <img id="file-icon" src="static/icons/upload.png">
                     </label>
                     <input type="file" id="file-input" accept="video/mp4" hidden>
                     <input type="text" id="file-title" placeholder="Video title">

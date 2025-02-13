@@ -52,7 +52,7 @@ function updatePagination() {
     pagination.appendChild(prevButton);
 
     let pageButton = document.createElement('button');
-    pageButton.textContent = `${currentPage + 1} / ${totalPages}`;
+    pageButton.textContent = `${currentPage + 1} / ${totalPages + 1}`;
     pagination.appendChild(pageButton);
 
     let nextButton = document.createElement('button');
@@ -67,7 +67,7 @@ async function loadVideos() {
     let list = document.getElementById('video-list');
     list.innerHTML = "";
 
-    let countResponse = await fetch('/videos/count');
+    let countResponse = await fetch(`/videos/count?query=${currentFilter}`);
     let countData = await countResponse.json();
     totalVideos = countData.count;
     totalPages = Math.ceil(totalVideos / limit);
@@ -210,6 +210,34 @@ function editTitle() {
 
         videoTitle.textContent = newTitle;
         loadVideos();
+    }
+}
+
+
+function deleteVideo() {
+    let videoName = document.getElementById('video-title');
+    if (confirm(`Are you sure you want to delete the video: ${videoName.textContent.trim()}?`)) {
+        fetch('/delete-video', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                video_name: videoName.textContent.trim()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("Video deleted successfully!");
+                loadVideos();
+            } else {
+                alert(data.error || "Error deleting video");
+            }
+        })
+        .catch(error => {
+            alert("Failed to delete video: " + error.message);
+        });
     }
 }
 
