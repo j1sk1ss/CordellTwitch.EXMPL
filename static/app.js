@@ -1,4 +1,5 @@
 let currentFilter = ""
+let access_key = "";
 
 let loadedVideos = 0;
 const batchSize = 6;
@@ -10,7 +11,7 @@ let currentPage = 0;
 
 
 async function getVideoDate(url) {
-    let response = await fetch(url, { method: 'HEAD' });
+    let response = await fetch(url, { method: 'HEAD', headers: { 'Authorization': access_key } });
     let lastModified = response.headers.get('Last-Modified');
     return lastModified ? new Date(lastModified).getTime() : 0;
 }
@@ -67,13 +68,13 @@ async function loadVideos() {
     let list = document.getElementById('video-list');
     list.innerHTML = "";
 
-    let countResponse = await fetch(`/videos/count?query=${currentFilter}`);
+    let countResponse = await fetch(`/videos/count?query=${currentFilter}`, { headers: { 'Authorization': access_key } });
     let countData = await countResponse.json();
     totalVideos = countData.count;
     totalPages = Math.ceil(totalVideos / limit);
 
     const offset = currentPage * limit;
-    let response = await fetch(`/videos?offset=${offset}&limit=${limit}&query=${currentFilter}`);
+    let response = await fetch(`/videos?offset=${offset}&limit=${limit}&query=${currentFilter}`, { headers: { 'Authorization': access_key } });
     let videoData = await response.json();
 
     allVideos = [];
@@ -149,13 +150,14 @@ async function validateKey() {
     let key = document.getElementById("access-key").value;
     let response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/check_key`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", 'Authorization': access_key },
         body: JSON.stringify({ key })
     });
 
     let result = await response.json();
     if (result.access === "granted") {
         document.getElementById("auth-screen").style.display = "none";
+        access_key = key;
     } else {
         alert("Неверный ключ!");
     }
@@ -189,7 +191,8 @@ function editTitle() {
         fetch('/rename-video', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': access_key
             },
             body: JSON.stringify({
                 old_name: videoTitle.textContent.trim(),
@@ -220,7 +223,8 @@ function deleteVideo() {
         fetch('/delete-video', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': access_key
             },
             body: JSON.stringify({
                 video_name: videoName.textContent.trim()
@@ -299,7 +303,10 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             let response = await fetch('/upload', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'Authorization': access_key
+                }
             });
     
             if (!response.ok) {

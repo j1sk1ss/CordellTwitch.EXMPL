@@ -2,7 +2,6 @@ import os
 import re
 import shutil
 import datetime
-import subprocess
 
 from flask import (
     Flask, 
@@ -14,9 +13,10 @@ from flask import (
 )
 
 
+# region Setup
+
 app = Flask(__name__, template_folder="static", static_folder="static")
 VIDEO_DIR = "/Users/nikolaj/Downloads"
-
 
 def _load_keys():
     try:
@@ -27,6 +27,17 @@ def _load_keys():
 
 ACCESS_KEYS = _load_keys()
 
+def require_authorization(f):
+    def _wrapper(*args, **kwargs):
+        auth_key = request.headers.get("Authorization")
+        if not auth_key or auth_key not in ACCESS_KEYS:
+            return jsonify({"error": "Unauthorized"}), 403
+        
+        return f(*args, **kwargs)
+    return _wrapper
+
+# endregion
+
 
 @app.route("/")
 def _index():
@@ -34,6 +45,7 @@ def _index():
 
 
 @app.route("/videos", methods=["GET"])
+@require_authorization
 def _list_videos():
     offset = int(request.args.get("offset", 0))
     limit = int(request.args.get("limit", 10))
@@ -61,6 +73,7 @@ def _list_videos():
 
 
 @app.route("/videos/count", methods=["GET"])
+@require_authorization
 def _videos_count():
     query = request.args.get("query", "").lower()
     videos = [f for f in os.listdir(VIDEO_DIR) if f.endswith(".mp4")]
@@ -71,7 +84,8 @@ def _videos_count():
 
 
 @app.route("/video:download/<filename>", methods=["GET"])
-def download_video(filename):
+@require_authorization
+def _download_video(filename):
     try:
         video_path = os.path.join(VIDEO_DIR, filename)
         if not os.path.exists(video_path):
@@ -83,6 +97,7 @@ def download_video(filename):
 
 
 @app.route("/video/<filename>", methods=["GET"])
+@require_authorization
 def _stream_video(filename):
     file_path = os.path.join(VIDEO_DIR, filename)
     if not os.path.exists(file_path):
@@ -90,14 +105,14 @@ def _stream_video(filename):
     
     file_size = os.path.getsize(file_path)
     range_header = request.headers.get("Range", None)
-
-    def generate(start, length):
+    def _generate(start, length):
         with open(file_path, "rb") as f:
             f.seek(start)
             while length > 0:
                 chunk = f.read(min(4096, length))
                 if not chunk:
                     break
+
                 yield chunk
                 length -= len(chunk)
 
@@ -108,19 +123,20 @@ def _stream_video(filename):
             end = int(range_match.group(2)) if range_match.group(2) else file_size - 1
             length = end - start + 1
 
-            response = Response(generate(start, length), status=206, mimetype="video/mp4")
+            response: Response = Response(_generate(start, length), status=206, mimetype="video/mp4")
             response.headers.add("Content-Range", f"bytes {start}-{end}/{file_size}")
             response.headers.add("Accept-Ranges", "bytes")
             response.headers.add("Content-Length", str(length))
             return response
 
-    response = Response(generate(0, file_size), mimetype="video/mp4")
+    response: Response = Response(_generate(0, file_size), mimetype="video/mp4")
     response.headers.add("Content-Length", str(file_size))
     response.headers.add("Accept-Ranges", "bytes")
     return response
 
 
 @app.route("/upload", methods=["POST"])
+@require_authorization
 def _upload_video():
     if "file" not in request.files:
         return jsonify({"error": "No file part"}), 400
@@ -135,6 +151,7 @@ def _upload_video():
 
 
 @app.route('/delete-video', methods=['POST'])
+@require_authorization
 def delete_video():
     data: dict = request.json
     video_name = data.get('video_name')
@@ -155,6 +172,7 @@ def delete_video():
 
 
 @app.route("/rename-video", methods=["POST"])
+@require_authorization
 def _rename_video():
     data: dict = request.json
     old_name = data.get("old_name")
@@ -173,24 +191,10 @@ def _rename_video():
 def _check_key():
     data: dict = request.json
     key = data.get("key")
-
     if key in ACCESS_KEYS:
         return jsonify({"access": "granted"})
     
     return jsonify({"access": "denied"}), 403
-
-
-@app.route("/stream", methods=["POST"])
-def _start_stream():
-    stream_key = request.args.get("key")
-    output_path = os.path.join(VIDEO_DIR, f"{stream_key}.mp4")
-    command = [
-        "ffmpeg", "-i", f"rtmp://localhost/live/{stream_key}",
-        "-c:v", "copy", "-c:a", "copy", output_path
-    ]
-    
-    subprocess.Popen(command)
-    return jsonify({"success": True, "message": "Stream recording started."})
 
 
 if __name__ == "__main__":
