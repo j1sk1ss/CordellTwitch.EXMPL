@@ -1,10 +1,15 @@
 import os
 import re
+import uuid
 import shutil
 import datetime
 
+from crypto import (
+    encrypt_video,
+    decrypt_video
+)
+
 from functools import wraps
-import uuid
 from flask import (
     Flask, 
     Response, 
@@ -19,11 +24,13 @@ from flask import (
 
 video_tokens = {}
 app = Flask(__name__, template_folder="static", static_folder="static")
-VIDEO_DIR = "C:\\Users\\j1sk1ss\\Documents\\Repositories\\CordellTwitch.EXMPL" # set video directory
+VIDEO_DIR = "." # set video directory
+KEY_DIR = "static\\data\\keys.txt"
+ENCRYPT_KEY = os.urandom(32)
 
 def _load_keys():
     try:
-        with open("keys.txt", "r") as f:
+        with open(KEY_DIR, "r") as f:
             return set(line.strip() for line in f.readlines())
     except FileNotFoundError:
         return set()
@@ -141,16 +148,10 @@ def _stream_video(filename):
     
     file_size = os.path.getsize(file_path)
     range_header = request.headers.get("Range", None)
-    def _generate(start, length):
-        with open(file_path, "rb") as f:
-            f.seek(start)
-            while length > 0:
-                chunk = f.read(min(4096, length))
-                if not chunk:
-                    break
 
-                yield chunk
-                length -= len(chunk)
+    def _generate(start, length):
+        decrypted_chunk = decrypt_video(file_path=file_path, start=start, length=length, key=ENCRYPT_KEY)
+        yield decrypted_chunk
 
     if range_header:
         range_match = re.search(r"bytes=(\d+)-(\d*)", range_header)
@@ -183,6 +184,7 @@ def _upload_video():
     
     file_path = os.path.join(VIDEO_DIR, request.form["title"])
     file.save(file_path)
+    encrypt_video(file_path=file_path, key=ENCRYPT_KEY)
     return jsonify({"success": True, "filename": os.path.join(VIDEO_DIR, request.form["title"])})
 
 
