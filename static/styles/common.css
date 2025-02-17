@@ -140,6 +140,18 @@ button:hover {
     cursor: pointer;
 }
 
+#delete-icon {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+#link-icon {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
 #download-icon {
     width: 20px;
     height: 20px;

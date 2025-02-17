@@ -246,8 +246,64 @@ function deleteVideo() {
 }
 
 
+function generateLink() {
+    let videoName = document.getElementById('video-title');
+    if (videoName) {
+        fetch("/generate-token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'Authorization': access_key
+            },
+            body: JSON.stringify({ video_name: videoName.textContent })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const videoUrl = window.location.origin + `?token=${data.token}`
+                prompt("Link:", videoUrl);
+            } else {
+                alert("Error: " + data.error);
+            }
+        });
+    }
+}
+
+
 window.onload = async function () {
-    await loadVideos();
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoToken = urlParams.get('token');
+    if (videoToken) {
+        fetch(`/private-video?token=${videoToken}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let videoPlayer = document.getElementById('player');
+                    let videoSource = document.getElementById('video-source');
+                    
+                    videoSource.src = `/video/${data.name}`;
+                    videoPlayer.load();
+                    videoPlayer.play();
+                    
+                    let videoTitle = document.getElementById('video-title');
+                    let videoDate = document.getElementById('video-date');
+                    videoTitle.textContent = data.name;
+                    videoDate.textContent = new Date(data.creation_date).toLocaleDateString();
+
+                    document.getElementById("auth-screen").style.display = "none";
+                    document.getElementById("edit-icon").style.display = "none";
+                    document.getElementById("delete-icon").style.display = "none";
+                    document.getElementById("link-icon").style.display = "none";
+                    document.getElementById("video-container").style.display = "none";
+                    document.getElementById("upload-form").style.display = "none";
+                } else {
+                    alert("Invalid video token!");
+                }
+            });
+    }
+    else {
+        await loadVideos();
+    }
 };
 
 

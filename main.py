@@ -3,6 +3,8 @@ import re
 import shutil
 import datetime
 
+from functools import wraps
+import uuid
 from flask import (
     Flask, 
     Response, 
@@ -15,8 +17,9 @@ from flask import (
 
 # region Setup
 
+video_tokens = {}
 app = Flask(__name__, template_folder="static", static_folder="static")
-VIDEO_DIR = "/Users/nikolaj/Downloads"
+VIDEO_DIR = "C:\\Users\\j1sk1ss\\Documents\\Repositories\\CordellTwitch.EXMPL" # set video directory
 
 def _load_keys():
     try:
@@ -28,16 +31,16 @@ def _load_keys():
 ACCESS_KEYS = _load_keys()
 
 def require_authorization(f):
-    def _wrapper(*args, **kwargs):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
         auth_key = request.headers.get("Authorization")
         if not auth_key or auth_key not in ACCESS_KEYS:
             return jsonify({"error": "Unauthorized"}), 403
         
         return f(*args, **kwargs)
-    return _wrapper
+    return wrapper
 
 # endregion
-
 
 @app.route("/")
 def _index():
@@ -83,8 +86,42 @@ def _videos_count():
     return jsonify({"count": len(videos)})
 
 
-@app.route("/video:download/<filename>", methods=["GET"])
+@app.route("/generate-token", methods=["POST"])
 @require_authorization
+def _generate_token():
+    data: dict = request.json
+    video_name = data.get("video_name")
+    
+    if not video_name:
+        return jsonify({"error": "Video name is required"}), 400
+    
+    video_path = os.path.join(VIDEO_DIR, video_name)
+    if not os.path.exists(video_path):
+        return jsonify({"error": "Video not found"}), 404
+    
+    token = str(uuid.uuid4())
+    video_tokens[token] = video_name
+
+    return jsonify({"success": True, "token": token})
+
+
+@app.route("/private-video", methods=["GET"])
+def _get_private_video():
+    token = request.args.get("token")
+    if token not in video_tokens:
+        return jsonify({"error": "Invalid token"}), 400
+    
+    video_path = os.path.join(VIDEO_DIR, video_tokens.get(token))
+    creation_date = os.path.getctime(video_path)
+    creation_date = datetime.datetime.fromtimestamp(creation_date).isoformat()
+    return {
+        "success": True,
+        "name": video_tokens.get(token),
+        "creation_date": creation_date
+    }
+
+
+@app.route("/video:download/<filename>", methods=["GET"])
 def _download_video(filename):
     try:
         video_path = os.path.join(VIDEO_DIR, filename)
@@ -97,7 +134,6 @@ def _download_video(filename):
 
 
 @app.route("/video/<filename>", methods=["GET"])
-@require_authorization
 def _stream_video(filename):
     file_path = os.path.join(VIDEO_DIR, filename)
     if not os.path.exists(file_path):
@@ -152,7 +188,7 @@ def _upload_video():
 
 @app.route('/delete-video', methods=['POST'])
 @require_authorization
-def delete_video():
+def _delete_video():
     data: dict = request.json
     video_name = data.get('video_name')
 
